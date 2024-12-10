@@ -90,33 +90,41 @@ export const useAuthStore=create((set)=>({
         }
       },      
       
-      updateProfile: async (data) => {
+      updateProfile: async (profileData) => {
         set({ isUpdatingProfile: true });
         try {
+          // Call your API to update the profile
           const response = await fetch("http://localhost:5001/api/auth/update-profile", {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // Include cookies for authentication
-            body: JSON.stringify(data),
+            body: JSON.stringify(profileData),
+            credentials: "include", // Include cookies or other credentials if necessary
           });
-      
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to update profile");
-          }
-      
-          const resData = await response.json();
-          set({ authUser: resData });
-          toast.success("Profile updated successfully");
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Failed to update profile");
+          set({ authUser: data.user }); // Update the authUser state with new data
         } catch (error) {
-          console.log("Error in update profile:", error.message);
-          toast.error(error.message);
+          console.error("Error updating profile:", error.message);
         } finally {
           set({ isUpdatingProfile: false });
         }
       },
-    
-
+      fetchUserProfile: async () => {
+        try {
+          const response = await fetch("http://localhost:5001/api/auth/get-profile", {
+            method: "GET",
+            credentials: "include",
+          });
+          const data = await response.json();
+          if (response.ok) {
+            set({ authUser: data.user });
+          } else {
+            console.error("Failed to fetch user profile:", data.message);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error.message);
+        }
+      },
 }))

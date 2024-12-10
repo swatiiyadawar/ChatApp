@@ -93,59 +93,53 @@ export const logout = (req, res) => {
   }
 };
 
+
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body; // Extract profile picture from the request body
-    const userId = req.user?._id; // Safeguard against missing `req.user`
+    const { profilePic } = req.body; // Get the profile picture from the request body
+    const userId = req.user._id; // Assuming user is authenticated and user ID is available in the request
 
-    // Validate input
+    // Check if the profilePic is provided
     if (!profilePic) {
-      return res.status(400).json({ message: "Profile picture is required" });
+      return res.status(400).json({ message: "Profile pic is required" });
     }
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized - User not authenticated" });
-    }
-
-    // Upload profile picture to Cloudinary
+    // Upload the image to Cloudinary (you can adjust the options based on your requirements)
     const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-      folder: "profile_pics", // Organize images in a specific folder
-      transformation: { width: 300, height: 300, crop: "fill" }, // Resize for consistency
+      folder: "user_profiles", // Optional: specify the folder for cloud storage
+      transformation: [{ width: 200, height: 200, crop: "fill" }], // Optional: resize image
     });
 
-    if (!uploadResponse.secure_url) {
-      return res.status(500).json({ message: "Failed to upload image to Cloudinary" });
-    }
-
-    // Update user's profile in the database
+    // Update the user's profile with the new profile picture URL
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true } // Return updated user object
+      { profilePic: uploadResponse.secure_url }, // Set the secure URL of the uploaded image
+      { new: true } // Return the updated user
     );
 
-    if (!updatedUser) {
+    // Send the updated user as the response
+    res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.log("Error in update profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.user._id; // Assuming user is authenticated
+
+    const user = await User.findById(userId); // Replace with your model
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Respond with success
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        profilePic: updatedUser.profilePic,
-      },
-    });
+    res.status(200).json(user);
   } catch (error) {
-    console.error("Error in updateProfile controller:", error.message);
-    return res.status(500).json({
-      message: "An error occurred while updating the profile",
-      error: error.message, // Include error details for debugging
-    });
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 export const checkAuth = (req, res) => {

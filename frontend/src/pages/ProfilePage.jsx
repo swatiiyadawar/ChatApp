@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User } from "lucide-react";
 import avatarPlaceholder from "../assets/avatar.png";
 
 const ProfilePage = () => {
-  const { authUser, isUpdatingProfile, updateProfile } = useAuthStore();
+  const { authUser, isUpdatingProfile, updateProfile, fetchUserProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
+
+  useEffect(() => {
+    fetchUserProfile(); // Fetch the user profile when the component is mounted
+  }, [fetchUserProfile]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -45,15 +49,20 @@ const ProfilePage = () => {
     };
   };
   
+  
 
   return (
     <div className="h-screen pt-20">
       <div className="max-w-2xl mx-auto p-4 py-8">
+      {isUpdatingProfile || !authUser ? (
+        <p>Loading...</p> // Or any other loading indicator
+      ) : (
       <div className="bg-base-300 rounded-xl  shadow-md p-6 space-y-8 p-6 space-y-8">
           <div className="text-center">
             <h1 className="text-2xl font-semibold ">Profile</h1>
             <p className="mt-2">Your profile information</p>
           </div>
+       
 
           {/* Avatar Upload Section */}
           <div className="flex flex-col items-center gap-4">
@@ -125,6 +134,7 @@ const ProfilePage = () => {
             </div>
           </div>
         </div>
+         )}
       </div>
     </div>
   );
